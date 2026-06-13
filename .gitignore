@@ -1,0 +1,11 @@
+# Local Environment Secrets (DO NOT UPLOAD)
+.env
+backend-flask/.env
+garden_keys.txt
+
+# Python Virtual Environments & Caches
+venv/
+.venv/
+__pycache__/
+*.pyc
+.idea/
