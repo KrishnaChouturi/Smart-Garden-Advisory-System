@@ -54,5 +54,29 @@ def test_weather():
         return jsonify({"status": "Server Error", "message": str(e)}), 500
 
 
+# 📝 NEW: Simulate log entry into the Watering History Table
+@app.route('/simulate-watering-log', methods=['GET'])
+def simulate_watering_log():
+    try:
+        # Mocking a data payload that either an ESP32 or a Frontend click would submit
+        simulated_log = {
+            "plant_id": 1,  # Assuming a plant with ID 1 exists in your database
+            "amount_recommended": "Medium",
+            "amount_applied": "Medium",
+            "log_type": "System"
+        }
+        
+        # Inject the mock data payload directly into your Supabase cloud table
+        response = supabase.table('watering_history').insert(simulated_log).execute()
+        
+        return jsonify({
+            "status": "Success",
+            "message": "Simulated watering ledger entry written to cloud database!",
+            "inserted_data": response.data
+        }), 201
+
+    except Exception as e:
+        return jsonify({"status": "Server Error", "message": str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
