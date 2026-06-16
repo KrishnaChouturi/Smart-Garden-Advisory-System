@@ -54,19 +54,59 @@ def test_weather():
         return jsonify({"status": "Server Error", "message": str(e)}), 500
 
 
-# 📝 NEW: Simulate log entry into the Watering History Table
+@app.route('/check-watering-need/<int:plant_id>', methods=['GET'])
+def check_watering_need(plant_id):
+    try:
+        plant_profile = supabase.table('plant_profiles').select('*').eq('id', plant_id).single().execute()
+
+        if not plant_profile.data:
+            return jsonify({"status": "Error", "message": "Plant profile not found"}), 404
+
+        target_moisture = plant_profile.data.get('min_moisture_threshold', 40)
+        # To this:
+        recent_reading = supabase.table('soil_readings').select('*').eq('plant_id', plant_id).order('created_at',desc=True).limit(1).execute()
+        if not recent_reading.data:
+            return jsonify({"status": "Pending", "message": "No soil readings available yet for this plant."}), 200
+
+        current_moisture = recent_reading.data[0].get('moisture_level')
+
+        watering_needed = current_moisture < target_moisture
+        recommendation = "None"
+
+        if watering_needed:
+            deficit = target_moisture - current_moisture
+            recommendation = "High" if deficit > 20 else "Medium"
+
+            log_data = {
+                "plant_id": plant_id,
+                "amount_recommended": recommendation,
+                "amount_applied": "Pending",
+                "log_type": "System"
+            }
+            supabase.table('watering_history').insert(log_data).execute()
+
+        return jsonify({
+            "status": "Success",
+            "plant_id": plant_id,
+            "current_moisture": f"{current_moisture}%",
+            "target_threshold": f"{target_moisture}%",
+            "watering_required": watering_needed,
+            "recommended_amount": recommendation
+        }), 200
+
+    except Exception as e:
+        return jsonify({"status": "Server Error", "message": str(e)}), 500
+
 @app.route('/simulate-watering-log', methods=['GET'])
 def simulate_watering_log():
     try:
-        # Mocking a data payload that either an ESP32 or a Frontend click would submit
         simulated_log = {
-            "plant_id": 1,  # Assuming a plant with ID 1 exists in your database
+            "plant_id": 1,
             "amount_recommended": "Medium",
             "amount_applied": "Medium",
             "log_type": "System"
         }
-        
-        # Inject the mock data payload directly into your Supabase cloud table
+
         response = supabase.table('watering_history').insert(simulated_log).execute()
         
         return jsonify({
