@@ -118,5 +118,32 @@ def simulate_watering_log():
     except Exception as e:
         return jsonify({"status": "Server Error", "message": str(e)}), 500
 
+@app.route('/get-watering-history/<int:plant_id>', methods=['GET'])
+def get_watering_history(plant_id):
+    try:
+        history_data = supabase.table('watering_history') \
+            .select('*') \
+            .eq('plant_id', plant_id) \
+            .order('created_at', desc=True) \
+            .execute()
+
+        if not history_data.data:
+            return jsonify({
+                "status": "Success",
+                "plant_id": plant_id,
+                "message": "No watering history records found for this plant.",
+                "history": []
+            }), 200
+
+        return jsonify({
+            "status": "Success",
+            "plant_id": plant_id,
+            "total_records": len(history_data.data),
+            "history": history_data.data
+        }), 200
+
+    except Exception as e:
+        return jsonify({"status": "Server Error", "message": str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
