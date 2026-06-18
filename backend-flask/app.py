@@ -1,6 +1,6 @@
 import os
 import requests
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
@@ -141,6 +141,36 @@ def get_watering_history(plant_id):
             "total_records": len(history_data.data),
             "history": history_data.data
         }), 200
+
+    except Exception as e:
+        return jsonify({"status": "Server Error", "message": str(e)}), 500
+
+@app.route('/manual-watering', methods=['POST'])
+def manual_watering():
+    try:
+        data = request.get_json()
+
+        plant_id = data.get('plant_id')
+        amount_requested = data.get('amount')
+
+        if not plant_id or not amount_requested:
+            return jsonify({
+                "status": "Error",
+                "message": "Missing required fields: 'plant_id' and 'amount' are required."
+            }), 400
+
+        new_log = supabase.table('watering_history').insert({
+            "plant_id": plant_id,
+            "amount_recommended": amount_requested,
+            "amount_applied": "Pending",
+            "log_type": "Manual"
+        }).execute()
+
+        return jsonify({
+            "status": "Success",
+            "message": f"Manual watering event successfully logged for plant {plant_id}.",
+            "log_details": new_log.data[0]
+        }), 201
 
     except Exception as e:
         return jsonify({"status": "Server Error", "message": str(e)}), 500
