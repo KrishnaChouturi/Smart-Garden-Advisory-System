@@ -175,5 +175,39 @@ def manual_watering():
     except Exception as e:
         return jsonify({"status": "Server Error", "message": str(e)}), 500
 
+@app.route('/hardware/control-signal/<int:plant_id>', methods=['GET'])
+def hardware_control_signal(plant_id):
+    try:
+        latest_action = supabase.table('watering_history') \
+            .select('*') \
+            .eq('plant_id', plant_id) \
+            .order('created_at', desc=True) \
+            .limit(1) \
+            .execute()
+
+        if not latest_action.data or latest_action.data[0].get('amount_applied') != 'Pending':
+            return jsonify({
+                "pump_signal": "OFF",
+                "amount": "None",
+                "message": "No pending watering commands found. Keep pump off."
+            }), 200
+
+        record_id = latest_action.data[0].get('id')
+        dosage = latest_action.data[0].get('amount_recommended')
+
+        supabase.table('watering_history') \
+            .update({"amount_applied": dosage}) \
+            .eq('id', record_id) \
+            .execute()
+
+        return jsonify({
+            "pump_signal": "ON",
+            "amount": dosage,
+            "message": f"Valid pending task found! Activating pump for a {dosage} dose."
+        }), 200
+
+    except Exception as e:
+        return jsonify({"pump_signal": "OFF", "error": str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
