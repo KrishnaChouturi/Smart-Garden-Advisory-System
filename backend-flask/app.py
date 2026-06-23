@@ -8,14 +8,12 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Cloud Connections
 url: str = os.getenv("SUPABASE_URL")
 key: str = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
 
 @app.route('/test-weather', methods=['GET'])
 def test_weather():
-    """Utility route to verify our connection to the weather API."""
     try:
         lat, lon = "39.973251", "-86.203782"
         meteo_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,relative_humidity_2m,rain&temperature_unit=fahrenheit"
@@ -37,16 +35,13 @@ def test_weather():
 
 @app.route('/check-watering-need/<int:plant_id>', methods=['GET'])
 def check_watering_need(plant_id):
-    """Core Advisory Engine: Computes raw telemetry data into a user recommendation."""
     try:
-        # 1. Fetch plant thresholds
         plant_profile = supabase.table('plant_profiles').select('*').eq('id', plant_id).single().execute()
         if not plant_profile.data:
             return jsonify({"status": "Error", "message": "Plant profile not found"}), 404
 
         target_moisture = plant_profile.data.get('min_moisture_threshold', 40)
 
-        # 2. Grab the latest reading beamed up by the ESP32
         recent_reading = supabase.table('soil_readings').select('*').eq('plant_id', plant_id).order('created_at', desc=True).limit(1).execute()
         if not recent_reading.data:
             return jsonify({"status": "Pending", "message": "No soil readings available yet for this plant."}), 200
@@ -55,7 +50,6 @@ def check_watering_need(plant_id):
         watering_needed = current_moisture < target_moisture
         recommendation = "None"
 
-        # 3. Log an advisory recommendation if the plant is dry
         if watering_needed:
             deficit = target_moisture - current_moisture
             recommendation = "High" if deficit > 20 else "Medium"
@@ -63,7 +57,7 @@ def check_watering_need(plant_id):
             supabase.table('watering_history').insert({
                 "plant_id": plant_id,
                 "amount_recommended": recommendation,
-                "amount_applied": "Pending", # Status stays pending until the user confirms they watered it
+                "amount_applied": "Pending",
                 "log_type": "System"
             }).execute()
 
@@ -82,7 +76,6 @@ def check_watering_need(plant_id):
 
 @app.route('/get-watering-history/<int:plant_id>', methods=['GET'])
 def get_watering_history(plant_id):
-    """Feeds the frontend dashboard timeline table."""
     try:
         history_data = supabase.table('watering_history').select('*').eq('plant_id', plant_id).order('created_at', desc=True).execute()
         return jsonify({
@@ -97,7 +90,6 @@ def get_watering_history(plant_id):
 
 @app.route('/manual-watering', methods=['POST'])
 def manual_watering():
-    """Triggered when the user clicks 'I watered this' or overrides the system on the UI."""
     try:
         data = request.get_json()
         plant_id = data.get('plant_id')
@@ -109,7 +101,7 @@ def manual_watering():
         new_log = supabase.table('watering_history').insert({
             "plant_id": plant_id,
             "amount_recommended": amount_requested,
-            "amount_applied": amount_requested, # Instantly marked as done because the user is performing the action
+            "amount_applied": amount_requested,
             "log_type": "Manual"
         }).execute()
 
@@ -122,5 +114,30 @@ def manual_watering():
         return jsonify({"status": "Server Error", "message": str(e)}), 500
 
 
+@app.route('/api/submit-reading', methods=['POST'])
+def submit_reading():
+    try:
+        data = request.get_json()
+
+        plant_id = data.get('plant_id')
+        moisture_level = data.get('moisture_level')
+
+        if plant_id is None or moisture_level is None:
+            return jsonify({"status": "Error", "message": "Missing telemetry data."}), 400
+
+        response = supabase.table('soil_readings').insert({
+            "plant_id": plant_id,
+            "moisture_level": int(moisture_level)
+        }).execute()
+
+        return jsonify({
+            "status": "Success",
+            "message": "Telemetry logged successfully.",
+            "logged_data": response.data[0]
+        }), 201
+
+    except Exception as e:
+        return jsonify({"status": "Server Error", "message": str(e)}), 500
+
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
