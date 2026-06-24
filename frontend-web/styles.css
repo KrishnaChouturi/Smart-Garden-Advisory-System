@@ -1,0 +1,109 @@
+:root {
+    --bg-color: #f4f7f6;
+    --card-bg: #ffffff;
+    --text-main: #2c3e50;
+    --accent-green: #27ae60;
+    --accent-blue: #2980b9;
+    --alert-red: #c0392b;
+    --border-color: #e2e8f0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    margin: 0;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+header h1 {
+    margin: 0;
+    color: var(--accent-green);
+}
+
+.dashboard-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.card {
+    background: var(--card-bg);
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    border: 1px solid var(--border-color);
+}
+
+.card h2 {
+    margin-top: 0;
+    border-bottom: 2px solid var(--bg-color);
+    padding-bottom: 10px;
+    font-size: 1.3rem;
+}
+
+.search-box, form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+input, select, button {
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    font-size: 1rem;
+}
+
+button {
+    background-color: var(--accent-green);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+button:hover {
+    background-color: #219653;
+}
+
+#submit-water-btn {
+    background-color: var(--accent-blue);
+}
+
+#submit-water-btn:hover {
+    background-color: #2471a3;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.loading {
+    color: #7f8c8d;
+    font-style: italic;
+}
+
+.badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.badge.danger { background-color: #ffadad; color: var(--alert-red); }
+.badge.success { background-color: #c1fba4; color: #19681f; }
+
+.feedback-msg {
+    font-weight: bold;
+    margin-top: 10px;
+    font-size: 0.9rem;
+}

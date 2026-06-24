@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Garden Advisory Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>🌱 Smart Garden Command Center</h1>
+        <p>Live Monitoring & Automated Diagnostics</p>
+    </header>
+
+    <main class="dashboard-container">
+        <section class="card" id="weather-card">
+            <h2>🌤️ Live Weather (Indiana)</h2>
+            <div id="weather-loading" class="loading">Fetching current conditions...</div>
+            <div id="weather-data" class="hidden">
+                <p><strong>Temperature:</strong> <span id="temp-val">--</span>°F</p>
+                <p><strong>Humidity:</strong> <span id="humidity-val">--</span>%</p>
+                <p><strong>Recent Rain:</strong> <span id="rain-val">--</span> mm</p>
+            </div>
+        </section>
+
+        <section class="card" id="plant-card">
+            <h2>🪴 Plant Health Status</h2>
+            <div class="search-box">
+                <input type="number" id="plant-id-input" placeholder="Enter Plant ID (e.g., 1)" value="1">
+                <button id="check-status-btn">Check Status</button>
+            </div>
+
+            <div id="plant-loading" class="loading hidden">Analyzing soil telemetry...</div>
+            <div id="plant-data" class="hidden">
+                <p><strong>Current Moisture:</strong> <span id="moisture-val">--</span></p>
+                <p><strong>Target Threshold:</strong> <span id="threshold-val">--</span></p>
+                <p><strong>Watering Required:</strong> <span id="watering-status" class="badge">--</span></p>
+                <p><strong>Recommendation:</strong> <span id="recommendation-val">--</span></p>
+            </div>
+        </section>
+
+        <section class="card" id="control-card">
+            <h2>💦 Manual Override</h2>
+            <form id="manual-water-form">
+                <label for="action-plant-id">Plant ID:</label>
+                <input type="number" id="action-plant-id" value="1" required>
+
+                <label for="water-amount">Water Amount:</label>
+                <select id="water-amount">
+                    <option value="Low">Low (Light Mist)</option>
+                    <option value="Medium">Medium (Standard Soak)</option>
+                    <option value="High">High (Deep Soak)</option>
+                </select>
+
+                <button type="submit" id="submit-water-btn">Trigger Irrigation Log</button>
+            </form>
+            <p id="form-feedback" class="feedback-msg"></p>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
