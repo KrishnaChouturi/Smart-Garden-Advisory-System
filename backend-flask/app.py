@@ -141,5 +141,25 @@ def submit_reading():
     except Exception as e:
         return jsonify({"status": "Server Error", "message": str(e)}), 500
 
+
+@app.route('/add-override', methods=['POST'])
+def add_override():
+    data = request.json
+    plant_id = data.get('plant_id')
+    water_amount = data.get('water_amount')
+
+    if not plant_id or not water_amount:
+        return jsonify({"status": "error", "message": "Missing form data!"}), 400
+
+    try:
+        response = supabase.table("water_logs").insert({
+            "plant_id": int(plant_id),
+            "amount_ml": int(water_amount),
+            "source": "manual_override"
+        }).execute()
+        return jsonify({"status": "success", "message": "Override logged successfully!"}), 201
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
