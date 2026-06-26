@@ -95,13 +95,14 @@ def manual_watering():
     try:
         data = request.get_json()
         plant_id = data.get('plant_id')
-        amount_requested = data.get('amount')
+        amount_requested = data.get('amount') # Pulls "Low", "Medium", or "High" from app.js
 
         if not plant_id or not amount_requested:
             return jsonify({"status": "Error", "message": "Missing required fields."}), 400
 
+        # Inserts into your actual table structure cleanly
         new_log = supabase.table('watering_history').insert({
-            "plant_id": plant_id,
+            "plant_id": int(plant_id),
             "amount_recommended": amount_requested,
             "amount_applied": amount_requested,
             "log_type": "Manual"
@@ -110,7 +111,7 @@ def manual_watering():
         return jsonify({
             "status": "Success",
             "message": f"Manual watering event successfully logged for plant {plant_id}.",
-            "log_details": new_log.data[0]
+            "log_details": new_log.data[0] if new_log.data else {}
         }), 201
     except Exception as e:
         return jsonify({"status": "Server Error", "message": str(e)}), 500
@@ -135,31 +136,11 @@ def submit_reading():
         return jsonify({
             "status": "Success",
             "message": "Telemetry logged successfully.",
-            "logged_data": response.data[0]
+            "logged_data": response.data[0] if response.data else {}
         }), 201
 
     except Exception as e:
         return jsonify({"status": "Server Error", "message": str(e)}), 500
-
-
-@app.route('/add-override', methods=['POST'])
-def add_override():
-    data = request.json
-    plant_id = data.get('plant_id')
-    water_amount = data.get('water_amount')
-
-    if not plant_id or not water_amount:
-        return jsonify({"status": "error", "message": "Missing form data!"}), 400
-
-    try:
-        response = supabase.table("water_logs").insert({
-            "plant_id": int(plant_id),
-            "amount_ml": int(water_amount),
-            "source": "manual_override"
-        }).execute()
-        return jsonify({"status": "success", "message": "Override logged successfully!"}), 201
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
