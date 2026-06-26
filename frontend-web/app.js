@@ -1,28 +1,23 @@
-// 1. SET YOUR LIVE RAILWAY URL HERE
-const BACKEND_URL = "https://smart-garden-advisory-system-production.up.railway.app/";
+const BACKEND_URL = "https://smart-garden-advisory-system-production.up.railway.app";
 
-// DOM Elements
 const tempVal = document.getElementById('temp-val');
 const humidityVal = document.getElementById('humidity-val');
 const rainVal = document.getElementById('rain-val');
+const upcomingRainBox = document.getElementById('upcoming-rain-box');
 const weatherLoading = document.getElementById('weather-loading');
 const weatherData = document.getElementById('weather-data');
 
-const plantIdInput = document.getElementById('plant-id-input');
-const checkStatusBtn = document.getElementById('check-status-btn');
 const plantLoading = document.getElementById('plant-loading');
 const plantData = document.getElementById('plant-data');
 const moistureVal = document.getElementById('moisture-val');
-const thresholdVal = document.getElementById('threshold-val');
-const wateringStatus = document.getElementById('watering-status');
+const targetThresholdInput = document.getElementById('target-threshold-input');
+const computeBtn = document.getElementById('compute-btn');
 const recommendationVal = document.getElementById('recommendation-val');
 
 const manualWaterForm = document.getElementById('manual-water-form');
-const actionPlantId = document.getElementById('action-plant-id');
 const waterAmount = document.getElementById('water-amount');
 const formFeedback = document.getElementById('form-feedback');
 
-// --- FETCH WEATHER DATA ---
 async function fetchWeather() {
     try {
         const response = await fetch(`${BACKEND_URL}/test-weather`);
@@ -34,6 +29,14 @@ async function fetchWeather() {
         humidityVal.textContent = data.humidity_percent;
         rainVal.textContent = data.current_rain_mm;
 
+        if (data.upcoming_rain) {
+            upcomingRainBox.innerHTML = `🌧️ Yes (Expect ${data.upcoming_rain_val}mm)`;
+            upcomingRainBox.style.color = "#dc3545";
+        } else {
+            upcomingRainBox.innerHTML = `✅ None Expected`;
+            upcomingRainBox.style.color = "#28a745";
+        }
+
         weatherLoading.classList.add('hidden');
         weatherData.classList.remove('hidden');
     } catch (error) {
@@ -42,84 +45,78 @@ async function fetchWeather() {
     }
 }
 
-// --- FETCH PLANT HEALTH STATUS ---
-async function fetchPlantStatus(plantId) {
-    plantLoading.classList.remove('hidden');
-    plantData.classList.add('hidden');
-
+async function fetchSoilTelemetry() {
     try {
-        const response = await fetch(`${BACKEND_URL}/check-watering-need/${plantId}`);
-        if (!response.ok) throw new Error('Plant data fetch failed');
-
+        const response = await fetch(`${BACKEND_URL}/compute-recommendation`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ target_threshold: targetThresholdInput.value })
+        });
         const data = await response.json();
 
-        moistureVal.textContent = data.current_moisture;
-        thresholdVal.textContent = data.target_threshold;
-        recommendationVal.textContent = data.recommended_amount;
-
-        // Handle badge styling based on requirement
-        if (data.watering_required) {
-            wateringStatus.textContent = "YES";
-            wateringStatus.className = "badge danger";
-        } else {
-            wateringStatus.textContent = "NO";
-            wateringStatus.className = "badge success";
+        if (response.ok) {
+            moistureVal.textContent = data.current_moisture;
+            plantLoading.classList.add('hidden');
+            plantData.classList.remove('hidden');
         }
-
-        plantLoading.classList.add('hidden');
-        plantData.classList.remove('hidden');
     } catch (error) {
-        console.error("Error fetching plant status:", error);
-        plantLoading.textContent = `❌ Plant ID ${plantId} not found or error loading data.`;
+        plantLoading.textContent = "❌ Failed to pull telemetry data rows.";
     }
 }
 
-// --- SUBMIT MANUAL WATERING LOG (POST) ---
+computeBtn.addEventListener('click', async () => {
+    computeBtn.textContent = "Calculating...";
+    try {
+        const response = await fetch(`${BACKEND_URL}/compute-recommendation`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ target_threshold: parseInt(targetThresholdInput.value) })
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+            recommendationVal.textContent = data.recommendation;
+            alert(`Analysis complete! System recommends: ${data.recommendation}`);
+        } else {
+            alert(`Error running model: ${data.message}`);
+        }
+    } catch (err) {
+        alert("Failed to reach processing cluster.");
+    } finally {
+        computeBtn.textContent = "Compute Smart Recommendation";
+    }
+});
+
 manualWaterForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    formFeedback.textContent = "Submitting log...";
-    formFeedback.style.color = "var(--text-main)";
+    formFeedback.textContent = "Submitting override context...";
 
-    const payload = {
-        plant_id: parseInt(actionPlantId.value),
-        amount: waterAmount.value
-    };
+    const selectedAmount = waterAmount.value;
 
     try {
         const response = await fetch(`${BACKEND_URL}/manual-watering`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({ amount: selectedAmount })
         });
 
         const data = await response.json();
 
         if (response.ok) {
-            formFeedback.textContent = `✅ Success: ${data.message}`;
-            formFeedback.style.color = "var(--accent-green)";
-            // Refresh plant data automatically if it matches the current viewed plant
-            if (payload.plant_id === parseInt(plantIdInput.value)) {
-                fetchPlantStatus(payload.plant_id);
-            }
+            formFeedback.textContent = `✅ Successfully logged Override: ${selectedAmount}`;
+            formFeedback.style.color = "#28a745";
+            recommendationVal.textContent = selectedAmount;
         } else {
             formFeedback.textContent = `❌ Error: ${data.message}`;
-            formFeedback.style.color = "var(--alert-red)";
+            formFeedback.style.color = "#dc3545";
         }
     } catch (error) {
-        console.error("Error logging manual watering:", error);
-        formFeedback.textContent = "❌ Failed to reach the cloud server.";
-        formFeedback.style.color = "var(--alert-red)";
+        formFeedback.textContent = "❌ Network connection dropped.";
+        formFeedback.style.color = "#dc3545";
     }
 });
 
-// Event Listeners for Buttons
-checkStatusBtn.addEventListener('click', () => {
-    const id = plantIdInput.value.trim();
-    if (id) fetchPlantStatus(id);
-});
-
-// Initial Load Actions
 window.addEventListener('DOMContentLoaded', () => {
     fetchWeather();
-    fetchPlantStatus(1); // Load default plant id 1 on startup
+    fetchSoilTelemetry();
 });

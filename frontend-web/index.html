@@ -20,41 +20,43 @@
                 <p><strong>Temperature:</strong> <span id="temp-val">--</span>°F</p>
                 <p><strong>Humidity:</strong> <span id="humidity-val">--</span>%</p>
                 <p><strong>Recent Rain:</strong> <span id="rain-val">--</span> mm</p>
+                <p><strong>Upcoming Rain Today:</strong> <span id="upcoming-rain-box">--</span></p>
             </div>
         </section>
 
         <section class="card" id="plant-card">
-            <h2>🪴 Plant Health Status</h2>
-            <div class="search-box">
-                <input type="number" id="plant-id-input" placeholder="Enter Plant ID (e.g., 1)" value="1">
-                <button id="check-status-btn">Check Status</button>
-            </div>
+            <h2>🪴 Soil Telemetry Analytics</h2>
 
-            <div id="plant-loading" class="loading hidden">Analyzing soil telemetry...</div>
+            <div id="plant-loading" class="loading">Syncing live database metrics...</div>
             <div id="plant-data" class="hidden">
-                <p><strong>Current Moisture:</strong> <span id="moisture-val">--</span></p>
-                <p><strong>Target Threshold:</strong> <span id="threshold-val">--</span></p>
-                <p><strong>Watering Required:</strong> <span id="watering-status" class="badge">--</span></p>
-                <p><strong>Recommendation:</strong> <span id="recommendation-val">--</span></p>
+                <p><strong>Current Moisture:</strong> <span id="moisture-val">--</span>%</p>
+
+                <div class="control-group" style="margin: 15px 0;">
+                    <label for="target-threshold-input"><strong>Target Moisture Threshold (%):</strong></label>
+                    <input type="number" id="target-threshold-input" value="40" min="10" max="90" style="width: 70px; padding: 5px; margin-left: 10px;">
+                </div>
+
+                <button id="compute-btn" class="btn-primary" style="background-color: var(--accent-green, #28a745); color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer;">Compute Smart Recommendation</button>
+
+                <p style="margin-top: 15px;"><strong>Today's Recommendation:</strong> <span id="recommendation-val" class="badge" style="background-color: #007bff; color: white; padding: 3px 8px; border-radius: 4px;">None</span></p>
             </div>
         </section>
 
         <section class="card" id="control-card">
             <h2>💦 Manual Override</h2>
             <form id="manual-water-form">
-                <label for="action-plant-id">Plant ID:</label>
-                <input type="number" id="action-plant-id" value="1" required>
-
-                <label for="water-amount">Water Amount:</label>
-                <select id="water-amount">
-                    <option value="Low">Low (Light Mist)</option>
-                    <option value="Medium">Medium (Standard Soak)</option>
-                    <option value="High">High (Deep Soak)</option>
+                <label for="water-amount">Select Irrigation Override Scale:</label>
+                <select id="water-amount" style="width: 100%; padding: 8px; margin: 10px 0;">
+                    <option value="None">None</option>
+                    <option value="Small">Small</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Ample">Ample</option>
+                    <option value="Large">Large</option>
                 </select>
 
-                <button type="submit" id="submit-water-btn">Trigger Irrigation Log</button>
+                <button type="submit" id="submit-water-btn" style="width: 100%;">Trigger User Override</button>
             </form>
-            <p id="form-feedback" class="feedback-msg"></p>
+            <p id="form-feedback" class="feedback-msg" style="margin-top: 10px; font-weight: bold;"></p>
         </section>
     </main>
 
