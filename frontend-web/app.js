@@ -1,4 +1,4 @@
-const BACKEND_URL = "https://smart-garden-advisory-system-production.up.railway.app";
+const BACKEND_URL = "https://smart-garden-advisory-system.onrender.com";
 
 const tempVal = document.getElementById('temp-val');
 const humidityVal = document.getElementById('humidity-val');
